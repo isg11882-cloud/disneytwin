@@ -324,7 +324,7 @@ body {
 .camera-container {
   display: flex;
   flex-direction: column;
-  items-center;
+  align-items: center;
   gap: 2rem;
   width: 100%;
 }
