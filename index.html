@@ -1,13 +1,48 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>05-</title>
+    <title>디즈니 닮은꼴 찾기 | Disney Look-alike</title>
+    <!-- Google Fonts: Inter and Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <!-- Magical Background -->
+      <div class="stars-container">
+        <div class="stars"></div>
+        <div class="stars2"></div>
+        <div class="stars3"></div>
+      </div>
+      
+      <!-- Content -->
+      <main class="container">
+        <header class="header">
+          <h1 class="title">Disney <span class="highlight">Twin</span> Finder</h1>
+          <p class="subtitle">마법의 거울아, 나랑 가장 닮은 디즈니 캐릭터를 알려줘!</p>
+        </header>
+
+        <section class="magic-portal" id="portal">
+          <div class="portal-inner">
+            <div class="upload-zone" id="drop-zone">
+              <div class="icon-orb">✨</div>
+              <h2>사진을 여기에 올려주세요</h2>
+              <p>마법의 힘으로 당신의 닮은꼴을 찾아드립니다</p>
+              <button class="btn-magic" id="upload-btn">사진 선택하기</button>
+              <input type="file" id="file-input" accept="image/*" hidden />
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <p>© 2026 Disney Twin Finder. Powered by Magic & AI</p>
+        </footer>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
