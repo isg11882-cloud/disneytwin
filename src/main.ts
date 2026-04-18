@@ -137,13 +137,28 @@ async function startCameraMode() {
  * Analyze logic
  */
 async function analyzeImage(element: HTMLImageElement | HTMLCanvasElement) {
+  console.log('🔮 Magic Mirror: Starting analysis...');
+  
+  if (!model) {
+    console.warn('🔮 Magic Mirror: Model not ready yet.');
+    alert('마법의 거울이 아직 깨어나는 중입니다. 잠시만 기다려주세요!');
+    return;
+  }
+
   showLoadingUI('영혼을 투영하는 중...');
   try {
+    console.log('🔮 Magic Mirror: Predicting soul match...');
     const res = await predict(model, element);
+    console.log('🔮 Magic Mirror: Prediction complete:', res);
+
+    console.log('🔮 Magic Mirror: Fetching character artifact...');
     const charData = await getCharacterByName(res.label);
+    
+    console.log('🔮 Magic Mirror: Revealing destiny...');
     showResultUI(res.label, res.confidence, charData);
   } catch (err) {
-    alert('매칭 분석 중 오류가 발생했습니다.');
+    console.error('🔮 Magic Mirror Failure:', err);
+    alert('마법의 힘이 부족하여 분석에 실패했습니다. 다시 시도해 주세요.');
     showReadyUI();
   }
 }
