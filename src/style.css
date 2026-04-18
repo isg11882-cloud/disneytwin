@@ -212,8 +212,55 @@ body {
   }
 }
 
-/* --- Preview & Results --- */
-.preview-container {
+/* --- Settings & Buttons --- */
+.btn-settings {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--color-glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--color-glass-border);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 50px;
+  cursor: pointer;
+  z-index: 1000;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-settings:hover {
+  background: white;
+  color: black;
+  transform: scale(1.05);
+}
+
+.btn-retry {
+  margin-top: 2rem;
+  background: transparent;
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  padding: 0.8rem 2.5rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+}
+
+.btn-retry:hover {
+  background: var(--color-gold);
+  color: black;
+  box-shadow: 0 0 20px var(--color-gold-glow);
+}
+
+/* --- Analysis State --- */
+.analysis-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -221,25 +268,136 @@ body {
   animation: fadeIn 0.5s ease;
 }
 
-.preview-img {
-  width: 200px;
-  height: 200px;
-  object-fit: cover;
+.magic-circle {
+  width: 120px;
+  height: 120px;
+  border: 4px solid rgba(251, 191, 36, 0.1);
+  border-top-color: var(--color-gold);
+  border-bottom-color: var(--color-gold);
   border-radius: 50%;
-  border: 4px solid var(--color-gold);
-  box-shadow: 0 0 30px var(--color-gold-glow);
+  animation: spin 1.5s linear infinite;
+  box-shadow: 0 0 40px var(--color-gold-glow);
 }
 
-.magic-loader {
+.magic-text {
+  font-family: var(--font-title);
+  color: var(--color-gold);
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px var(--color-gold-glow);
+}
+
+/* --- Result State --- */
+.result-container {
   display: flex;
   flex-direction: column;
+  gap: 2.5rem;
   align-items: center;
-  gap: 1rem;
 }
 
-.magic-loader .sparkle {
-  font-size: 2rem;
-  animation: spin 2s linear infinite;
+.result-header .match-title {
+  font-size: 0.9rem;
+  color: var(--color-sky);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.character-name {
+  font-family: var(--font-title);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 800;
+  background: linear-gradient(to bottom, #fff 40%, var(--color-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 15px var(--color-gold-glow));
+}
+
+.result-card {
+  display: flex;
+  gap: 3rem;
+  align-items: center;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2.5rem;
+  border-radius: 40px;
+  border: 1px solid var(--color-glass-border);
+}
+
+.char-image-box {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.char-image {
+  width: 280px;
+  height: 280px;
+  object-fit: cover;
+  border-radius: 30px;
+  border: 4px solid var(--color-glass-border);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  transition: transform 0.5s ease;
+}
+
+.char-image:hover {
+  transform: scale(1.02) rotate(2deg);
+}
+
+.confidence-badge {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  background: var(--color-gold);
+  color: black;
+  padding: 0.6rem 1.2rem;
+  border-radius: 50px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.char-info {
+  flex: 1;
+}
+
+.info-item {
+  margin-bottom: 2rem;
+}
+
+.info-item .label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-sky);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.info-item .value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.4;
+}
+
+.magic-desc {
+  font-style: italic;
+  opacity: 0.6;
+  font-size: 0.95rem;
+  border-top: 1px solid var(--color-glass-border);
+  padding-top: 1.5rem;
+}
+
+/* Animations */
+.animate-reveal {
+  animation: reveal 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(50px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes spin {
@@ -247,8 +405,19 @@ body {
   to { transform: rotate(360deg); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+@media (max-width: 850px) {
+  .result-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+    gap: 2rem;
+  }
+  .char-image {
+    width: 220px;
+    height: 220px;
+  }
+  .character-name {
+    font-size: 2.8rem;
+  }
 }
 
