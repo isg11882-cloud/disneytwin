@@ -4,8 +4,9 @@ import { getCharacterByName } from './disney'
 import { cameraManager } from './lib/camera-manager'
 
 // --- Configuration ---
-// Default model (will be updated once user trains it)
-let MODEL_URL = localStorage.getItem('disney_model_url') || '';
+// Default model (Trained by user)
+const DEFAULT_MODEL_URL = 'https://teachablemachine.withgoogle.com/models/cykQNH7aH/';
+let MODEL_URL = localStorage.getItem('disney_model_url') || DEFAULT_MODEL_URL;
 
 // DOM Elements
 const portal = document.querySelector('#portal') as HTMLElement;
