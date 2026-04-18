@@ -1,46 +1,70 @@
 import './style.css'
-import { magicTrainer, TrainingProgress } from './lib/magic-trainer'
+import { loadMagicModel, predict } from './ai'
 import { getCharacterByName } from './disney'
 import { cameraManager } from './lib/camera-manager'
+
+// --- Configuration ---
+// Default model (will be updated once user trains it)
+let MODEL_URL = localStorage.getItem('disney_model_url') || '';
 
 // DOM Elements
 const portal = document.querySelector('#portal') as HTMLElement;
 const fileInput = document.querySelector('#file-input') as HTMLInputElement;
 
-let isCameraMode = false;
+let model: any = null;
 
 /**
- * Stage 1: Initial Animation & Auto-Training (or Cached Load)
+ * Stage 1: Awakening (Loading TM Model)
  */
 async function initMagicMirror() {
-  console.log('Disney Mirror Awakening...');
-  
-  await magicTrainer.train((progress: TrainingProgress) => {
-    updateTrainingUI(progress);
-    
-    if (progress.status === 'ready' || progress.status === 'cached') {
-      setTimeout(() => showReadyUI(), progress.status === 'cached' ? 100 : 1000);
+  if (!MODEL_URL) {
+    showSetupUI();
+    return;
+  }
+
+  showLoadingUI('마법의 거울이 깨어나는 중...');
+  try {
+    model = await loadMagicModel(MODEL_URL);
+    showReadyUI();
+  } catch (err) {
+    console.error('Model Load Failed:', err);
+    alert('모델 로드에 실패했습니다. 올바른 티처블 머신 URL인지 확인해주세요.');
+    showSetupUI();
+  }
+}
+
+/**
+ * UI: Show Setup State (When no URL exists)
+ */
+function showSetupUI() {
+  portal.innerHTML = `
+    <div class="setup-container animate-fade-in">
+      <h2 class="magic-text">마법의 설정을 완료해주세요</h2>
+      <p>티처블 머신에서 학습 완료 후 받은<br/>모델 공유 URL을 입력해주세요.</p>
+      <div class="input-group">
+        <input type="text" id="model-url-input" placeholder="https://teachablemachine.withgoogle.com/models/..." />
+        <button class="btn-main" id="btn-save-model">거울 깨우기</button>
+      </div>
+      <p class="subtext">모델이 없다면 제가 학습 과정을 도와드릴게요!</p>
+    </div>
+  `;
+
+  document.querySelector('#btn-save-model')?.addEventListener('click', () => {
+    const input = document.querySelector('#model-url-input') as HTMLInputElement;
+    if (input.value) {
+      localStorage.setItem('disney_model_url', input.value);
+      MODEL_URL = input.value;
+      initMagicMirror();
     }
   });
 }
 
-/**
- * UI: Show Training State
- */
-function updateTrainingUI(p: TrainingProgress) {
-  const percent = Math.round((p.count / (p.total || 1)) * 100);
-  const statusMsg = p.status === 'loading' ? '마법의 지식을 불러오는 중...' : 
-                    p.status === 'cached' ? '기억을 소환했습니다!' : '마법의 기억을 깨우는 중...';
-
+function showLoadingUI(msg: string) {
   portal.innerHTML = `
     <div class="training-container">
       <div class="magic-sphere"></div>
       <div class="training-info">
-        <h2 class="magic-text">${statusMsg}</h2>
-        <div class="progress-bar-container">
-          <div class="progress-bar" style="width: ${percent}%"></div>
-        </div>
-        <p class="training-subtext">${p.currentCharacter} (${percent}%)</p>
+        <h2 class="magic-text">${msg}</h2>
       </div>
     </div>
   `;
@@ -53,26 +77,30 @@ function showReadyUI() {
   portal.innerHTML = `
     <div class="ready-container animate-fade-in">
       <div class="sparkles-container">✨ ✨ ✨</div>
-      <h2 class="magic-text">거울이 준비되었습니다</h2>
-      <p>사진을 찍거나 업로드하여 운명을 확인하세요</p>
+      <h2 class="magic-text">마법의 준비가 끝났습니다</h2>
+      <p>자신의 사진을 찍거나 업로드하세요</p>
       
       <div class="action-buttons">
         <button class="btn-main" id="btn-camera">📸 카메라로 찍기</button>
         <button class="btn-secondary" id="btn-upload">📁 사진 업로드</button>
       </div>
+      <button class="btn-text" id="btn-reset-model" style="margin-top:2rem">모델 설정 초기화</button>
     </div>
   `;
   
   // Bind Events
   document.querySelector('#btn-upload')?.addEventListener('click', () => fileInput.click());
-  document.querySelector('#btn-camera')?.addEventListener('click', () => startCameraMode());
+  document.querySelector('#btn-camera')?.addEventListener('click', startCameraMode);
+  document.querySelector('#btn-reset-model')?.addEventListener('click', () => {
+    localStorage.removeItem('disney_model_url');
+    window.location.reload();
+  });
 }
 
 /**
  * Stage 2: Camera Mode
  */
 async function startCameraMode() {
-  isCameraMode = true;
   portal.innerHTML = `
     <div class="camera-container animate-fade-in">
       <div class="video-portal">
@@ -80,7 +108,7 @@ async function startCameraMode() {
         <div class="portal-overlay"></div>
       </div>
       <div class="camera-controls">
-        <button class="btn-shutter" id="btn-capture">✨ 촬영 매칭</button>
+        <button class="btn-shutter" id="btn-capture">✨ 매칭</button>
         <button class="btn-text" id="btn-cancel">취소</button>
       </div>
     </div>
@@ -89,72 +117,34 @@ async function startCameraMode() {
   const video = document.querySelector('#webcam') as HTMLVideoElement;
   try {
     await cameraManager.init(video);
-    document.querySelector('#btn-capture')?.addEventListener('click', handleCapture);
+    document.querySelector('#btn-capture')?.addEventListener('click', async () => {
+      const canvas = cameraManager.capture();
+      cameraManager.stop();
+      analyzeImage(canvas);
+    });
     document.querySelector('#btn-cancel')?.addEventListener('click', () => {
       cameraManager.stop();
       showReadyUI();
     });
   } catch (err) {
-    alert('카메라 접근에 실패했습니다. 파일 업로드 모드를 사용해주세요.');
+    alert('카메라 접근 권한이 필요합니다.');
     showReadyUI();
   }
 }
 
 /**
- * Handle Single Frame Capture
+ * Analyze logic
  */
-async function handleCapture() {
-  const canvas = cameraManager.capture();
-  cameraManager.stop();
-  
-  // Show analysis state
-  showAnalysisUI();
-  
+async function analyzeImage(element: HTMLImageElement | HTMLCanvasElement) {
+  showLoadingUI('영혼을 투영하는 중...');
   try {
-    const result = await magicTrainer.predict(canvas);
-    const characterData = await getCharacterByName(result.label);
-    showResultUI(result.label, result.confidence, characterData);
+    const res = await predict(model, element);
+    const charData = await getCharacterByName(res.label);
+    showResultUI(res.label, res.confidence, charData);
   } catch (err) {
-    console.error(err);
-    alert('분석 실패');
+    alert('매칭 분석 중 오류가 발생했습니다.');
     showReadyUI();
   }
-}
-
-/**
- * Handle File Upload
- */
-async function handleFileUpload(file: File) {
-  showAnalysisUI();
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.src = e.target?.result as string;
-    img.onload = async () => {
-      try {
-        const result = await magicTrainer.predict(img);
-        const characterData = await getCharacterByName(result.label);
-        showResultUI(result.label, result.confidence, characterData);
-      } catch (err) {
-        alert('분석 실패');
-        showReadyUI();
-      }
-    };
-  };
-  reader.readAsDataURL(file);
-}
-
-/**
- * UI: Show Analysis State
- */
-function showAnalysisUI() {
-  portal.innerHTML = `
-    <div class="analysis-container">
-      <div class="magic-vortex"></div>
-      <h2 class="magic-text">당신의 영혼을 투영 중...</h2>
-      <p>가장 닮은 캐릭터를 찾는 중입니다</p>
-    </div>
-  `;
 }
 
 /**
@@ -195,14 +185,15 @@ function showResultUI(name: string, confidence: number, data: any) {
 // Global Event Listeners
 fileInput?.addEventListener('change', (e) => {
   const file = (e.target as HTMLInputElement).files?.[0];
-  if (file) handleFileUpload(file);
-});
-
-portal.addEventListener('dragover', (e) => e.preventDefault());
-portal.addEventListener('drop', (e) => {
-  e.preventDefault();
-  const file = e.dataTransfer?.files[0];
-  if (file) handleFileUpload(file);
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.src = ev.target?.result as string;
+      img.onload = () => analyzeImage(img);
+    };
+    reader.readAsDataURL(file);
+  }
 });
 
 // Start the Mirror

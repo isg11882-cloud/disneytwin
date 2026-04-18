@@ -1,7 +1,6 @@
 /**
  * Real-time Camera Management Module
  */
-
 export class CameraManager {
   private stream: MediaStream | null = null;
   private videoElement: HTMLVideoElement | null = null;
@@ -31,14 +30,8 @@ export class CameraManager {
       this.stream.getTracks().forEach(track => track.stop());
       this.stream = null;
     }
-    if (this.videoElement) {
-      this.videoElement.srcObject = null;
-    }
   }
 
-  /**
-   * Captures a frame from the video stream onto a canvas
-   */
   capture(): HTMLCanvasElement {
     if (!this.videoElement) throw new Error('Camera not initialized');
     
@@ -48,7 +41,6 @@ export class CameraManager {
     
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      // Draw frame to canvas
       ctx.drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
     }
     
