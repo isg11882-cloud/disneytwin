@@ -1,66 +1,91 @@
 import './style.css'
-import { loadMagicModel, predictCharacter } from './ai'
+import { magicTrainer, TrainingProgress } from './lib/magic-trainer'
 import { getCharacterByName } from './disney'
 
-// Configuration (User: Please replace this URL with your Teachable Machine model URL)
-let MODEL_URL = ""; 
-
 // DOM Elements
-const app = document.querySelector('#app') as HTMLDivElement;
 const portal = document.querySelector('#portal') as HTMLElement;
 const uploadBtn = document.querySelector('#upload-btn') as HTMLButtonElement;
 const fileInput = document.querySelector('#file-input') as HTMLInputElement;
 
 /**
- * Initialize the application
+ * Stage 1: Initial Animation & Auto-Training
  */
-async function init() {
-  console.log('Disney Twin Finder Initialized');
+async function initMagicMirror() {
+  console.log('Disney Mirror Awakening...');
   
-  // Create a simple settings button to input model URL
-  addSettingsUI();
+  // Show training progress in the portal
+  magicTrainer.train((progress: TrainingProgress) => {
+    updateTrainingUI(progress);
+    
+    if (progress.status === 'ready') {
+      setTimeout(() => showReadyUI(), 1000);
+    }
+  });
 }
 
 /**
- * Handle image upload and start the magic
+ * UI: Show Training State
+ */
+function updateTrainingUI(p: TrainingProgress) {
+  const percent = Math.round((p.count / p.total) * 100);
+  
+  portal.innerHTML = `
+    <div class="training-container">
+      <div class="magic-sphere"></div>
+      <div class="training-info">
+        <h2 class="magic-text">마법의 기억을 깨우는 중...</h2>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: ${percent}%"></div>
+        </div>
+        <p class="training-subtext">${p.currentCharacter} (${percent}%)</p>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * UI: Show Ready State
+ */
+function showReadyUI() {
+  portal.innerHTML = `
+    <div class="ready-container animate-fade-in">
+      <div class="sparkles-container">✨ ✨ ✨</div>
+      <h2 class="magic-text">거울이 당신을 맞이할 준비가 되었습니다</h2>
+      <p>사진을 올리거나 이곳으로 끌어다 놓으세요</p>
+      <button class="btn-main" id="start-upload">사진 업로드하기</button>
+    </div>
+  `;
+  
+  // Re-bind click event
+  document.querySelector('#start-upload')?.addEventListener('click', () => fileInput.click());
+}
+
+/**
+ * Handle image upload and start analysis
  */
 async function handleFile(file: File) {
-  if (!MODEL_URL) {
-    alert('마법의 거울을 설정해주세요! (티처블 머신 URL을 입력해야 합니다)');
-    return;
-  }
-
   // 1. Show analysis state
   showAnalysisUI();
 
-  // 2. Load model (if not already loaded)
-  const isLoaded = await loadMagicModel(MODEL_URL);
-  if (!isLoaded) {
-    alert('거울을 불러오는 데 실패했습니다. URL을 확인해주세요.');
-    resetUI();
-    return;
-  }
-
-  // 3. Process image
   const reader = new FileReader();
   reader.onload = async (e) => {
     const img = new Image();
     img.src = e.target?.result as string;
     img.onload = async () => {
       try {
-        // 4. Predict
-        const prediction = await predictCharacter(img);
-        console.log('Prediction:', prediction);
+        // 2. Predict using our In-App Trainer
+        const result = await magicTrainer.predict(img);
+        console.log('Magic Result:', result);
 
-        // 5. Fetch Disney Info
-        const characterData = await getCharacterByName(prediction.className);
+        // 3. Fetch Disney Info from API
+        const characterData = await getCharacterByName(result.label);
         
-        // 6. Show Result
-        showResultUI(prediction.className, prediction.probability, characterData);
+        // 4. Show Result Reveal
+        showResultUI(result.label, result.confidence, characterData);
       } catch (err) {
         console.error(err);
-        alert('분석 중 오류가 발생했습니다.');
-        resetUI();
+        alert('마법의 거울이 흐려졌습니다. 다시 시도해주세요.');
+        showReadyUI();
       }
     };
   };
@@ -73,10 +98,9 @@ async function handleFile(file: File) {
 function showAnalysisUI() {
   portal.innerHTML = `
     <div class="analysis-container">
-      <div class="magic-circle"></div>
-      <div class="sparkle-orbit">✨</div>
-      <h2 class="magic-text">마법의 기운을 모으는 중...</h2>
-      <p>당신의 영혼과 닮은 캐릭터를 찾고 있습니다</p>
+      <div class="magic-vortex"></div>
+      <h2 class="magic-text">당신의 영혼을 투영 중...</h2>
+      <p>가장 닮은 캐릭터를 찾는 중입니다</p>
     </div>
   `;
 }
@@ -87,12 +111,12 @@ function showAnalysisUI() {
 function showResultUI(name: string, confidence: number, data: any) {
   const confidencePercent = Math.round(confidence * 100);
   const imageUrl = data?.imageUrl || 'https://via.placeholder.com/300?text=Disney+Character';
-  const films = data?.films?.slice(0, 3).join(', ') || '정보 없음';
+  const films = data?.films?.slice(0, 3).join(', ') || '마법의 기록 없음';
 
   portal.innerHTML = `
     <div class="result-container animate-reveal">
       <div class="result-header">
-        <h2 class="match-title">당신의 디즈니 단짝은...</h2>
+        <h2 class="match-title">당신과 운명적으로 닮은 캐릭터는...</h2>
         <h1 class="character-name">${name}</h1>
       </div>
       
@@ -107,40 +131,13 @@ function showResultUI(name: string, confidence: number, data: any) {
             <span class="label">대표 출연작</span>
             <span class="value">${films}</span>
           </div>
-          <p class="magic-desc">"진정한 마법은 당신의 마음속에 있습니다."</p>
+          <p class="magic-desc">"당신의 눈동자에서 ${name}의 용기를 보았습니다."</p>
         </div>
       </div>
 
-      <button class="btn-retry" onclick="window.location.reload()">다시 하기</button>
+      <button class="btn-retry" onclick="window.location.reload()">새로운 운명 찾기</button>
     </div>
   `;
-}
-
-function resetUI() {
-  window.location.reload();
-}
-
-/**
- * Add a simple settings overlay to input the model URL
- */
-function addSettingsUI() {
-  const settingsBtn = document.createElement('button');
-  settingsBtn.className = 'btn-settings';
-  settingsBtn.innerHTML = '⚙️ 설정';
-  app.appendChild(settingsBtn);
-
-  settingsBtn.onclick = () => {
-    const url = prompt('티처블 머신 모델 URL을 입력해주세요:', MODEL_URL);
-    if (url) {
-      MODEL_URL = url.endsWith('/') ? url : url + '/';
-      localStorage.setItem('DISNEY_MODEL_URL', MODEL_URL);
-      alert('설정이 저장되었습니다!');
-    }
-  };
-
-  // Load from storage if exists
-  const savedUrl = localStorage.getItem('DISNEY_MODEL_URL');
-  if (savedUrl) MODEL_URL = savedUrl;
 }
 
 // Global Event Listeners
@@ -150,7 +147,6 @@ fileInput?.addEventListener('change', (e) => {
   if (file) handleFile(file);
 });
 
-// Drag and Drop (Reuse from previous version or keep clean)
 portal.addEventListener('dragover', (e) => e.preventDefault());
 portal.addEventListener('drop', (e) => {
   e.preventDefault();
@@ -158,4 +154,5 @@ portal.addEventListener('drop', (e) => {
   if (file) handleFile(file);
 });
 
-init();
+// Start the Mirror
+initMagicMirror();
