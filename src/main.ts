@@ -27,7 +27,7 @@ async function initMagicMirror() {
     return;
   }
 
-  showLoadingUI('마법의 거울이 깨어나는 중... (v9.0)');
+  showLoadingUI('마법의 거울이 깨어나는 중... (v13.0)');
   try {
     model = await loadMagicModel(MODEL_URL);
     console.log('🔮 Magic Mirror: Model loaded successfully.');
