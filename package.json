@@ -1,7 +1,7 @@
 {
   "name": "disneytwin",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,9 +13,5 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
-    "@teachablemachine/image": "^0.8.5",
-    "@tensorflow-models/knn-classifier": "^1.2.6",
-    "@tensorflow-models/mobilenet": "^2.1.1",
-    "@tensorflow/tfjs": "^4.22.0"
   }
 }
